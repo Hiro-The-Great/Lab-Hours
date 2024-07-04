@@ -28,7 +28,7 @@ jobs:
 
       - name: Render flexdashboard
         run: |
-          R -e 'rmarkdown::render("Lab Hours.rmd", output_format = "flex_dashboard", output_dir = "docs")'
+          R -e 'rmarkdown::render("Lab-Hours.rmd", output_format = "flex_dashboard", output_dir = "docs")' > output.log 2>&1 cat output.log
 
       - name: Commit and push changes
         run: |
