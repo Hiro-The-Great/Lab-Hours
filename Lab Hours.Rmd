@@ -1,0 +1,202 @@
+---
+title: "Crystal Project Time Manager"
+knit: (function(input_file, encoding){
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+  encoding=encoding,
+  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      bg: "#f6f1f7"
+      fg: "#000000" 
+      primary: "#caa9d3"
+      base_font:
+        google: Prompt
+      code_font:
+        google: JetBrains Mono
+    orientation: columns
+    vertical_layout: fill
+    
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(hrbrthemes)
+library(ggthemes)
+library(tidyverse)
+library(lubridate) 
+library(knitr)
+library(kableExtra)
+library(rmarkdown)
+```
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+
+### Hours Worked This Week
+
+```{r}
+your_data <- read.csv("Hours.csv")
+your_data$Date <- as.POSIXct(your_data$Date, format = "%Y-%m-%d")
+
+# Calculate hours worked this week
+start_of_week <- floor_date(Sys.Date(), unit = "week")
+end_of_week <- ceiling_date(Sys.Date(), unit = "week") - days(1)
+
+filtered_data <- your_data %>%
+  filter(Date >= start_of_week & Date <= end_of_week)
+
+total_hours <- sum(filtered_data$Hours)
+
+  valueBox(
+    value = total_hours,
+    caption = "Hours Worked This Week",
+    icon = "fa-clock-o",
+    color = "#F2C6De"
+  )
+
+```
+
+### Hours Worked This Month
+```{r}
+# Calculate hours worked this month
+
+start_of_month <- floor_date(Sys.Date(), unit = "month")
+end_of_month <- ceiling_date(Sys.Date(), unit = "month") - days(1)
+
+filtered_data <- your_data %>%
+  filter(Date >= start_of_month & Date <= end_of_month)
+
+total_monthly_hours <- sum(filtered_data$Hours)
+
+  valueBox(
+  value = total_monthly_hours,
+  caption = "Hours Worked This Month",
+  icon = "fa-clock-o",
+  color = "#c6def1"
+  )
+```
+
+Column {data-width=650 .tabset}
+-----------------------------------------------------------------------
+
+### Hours Worked Per Day
+```{r}
+
+c <- tidyr::separate(your_data, Date, c('year', 'month', 'day'), sep = "-",remove = FALSE)
+
+c <- c %>%
+  group_by(month, day) %>%
+  summarise(
+    Hours = sum(Hours)
+  )
+
+ggplot(c, aes(month, day, fill= Hours)) + 
+  geom_tile() +
+  scale_fill_gradient(low="#ed0867", high = "#fdc1d5", na.value="transparent") +
+  theme_tufte()+
+  guides(x=guide_axis(angle = 45)) +
+  theme(plot.background = element_rect(fill = "#f6f1f7"),
+        panel.background = element_rect(fill = "#f6f1f7")) +
+  labs(
+    x="Month",
+    y="Days"
+  )
+
+```
+
+### Breakdown of Hours Spent Per Day
+```{r}
+
+a <- your_data %>%
+  group_by(Date, Project, Task) %>%
+  summarise(
+    n=n(),
+    sum=sum(Hours)
+  )
+
+ggplot(a, aes(x=Date, y=sum, colour=Project, fill=Project)) +
+  geom_col(position = "identity", alpha=0.5) +
+  scale_fill_manual(values=c("#F2C6De", "#dbcdf0", "#c6def1", "#f7d9c4", "#c9e4de", "#faedcb")) +
+  scale_color_manual(values=c("#F2C6De", "#dbcdf0", "#c6def1", "#f7d9c4", "#c9e4de", "#faedcb")) +
+  theme_classic() +
+  theme(plot.background = element_rect(fill = "#f6f1f7"),
+        panel.background = element_rect(fill = "#f6f1f7"),
+        legend.background = element_rect(fill="#f6f1f7")) +
+  ylim(0,15) +
+  labs(
+    y="Hours"
+  )
+
+```
+
+### Time Spent per Task
+```{r}
+task_data <- your_data %>%
+  group_by(Project) %>%
+  mutate(Percentage = Hours / sum(Hours) * 100)
+
+ggplot(task_data, aes(x = Project, y = Percentage, fill = Task, label=Task)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values=c("#f29982", "#fed87e", "#f6b9b1", "#95cfc0", "#cbb7db", "#74be97","#99a8ca", "#f090ba", "#e1c2dd", "#fcdbab", "#9ed1e8", "#ddcbb4", "#c2dfc9")) +
+  scale_color_manual(values=c("#f29982", "#fed87e", "#f6b9b1", "#95cfc0", "#cbb7db", "#74be97","#99a8ca", "#f090ba", "#e1c2dd", "#fcdbab", "#9ed1e8", "#ddcbb4", "#c2dfc9")) +
+  labs(title = "Percentage of Time Spent on Tasks by Project",
+       x = " ",
+       y = "Percentage",
+       fill = "Task") +
+  theme_classic() +
+  facet_wrap(~ Project, scales = "free") +
+  guides(fill = guide_legend(title = "Task")) +
+  theme(plot.background = element_rect(fill = "#f6f1f7"),
+        panel.background = element_rect(fill = "#f6f1f7"),
+        legend.background = element_rect(fill="#f6f1f7"),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+```
+
+
+Column {data-height=350}
+-----------------------------------------------------------------------
+
+### Hours Input
+
+```{r}
+your_data <- your_data %>%
+  arrange(desc(Date))
+
+kable(your_data, "html") %>%
+  kable_styling(full_width = TRUE)
+```
+
+### Breakdown of Total Time Spent Per Project
+
+```{r}
+b <- your_data %>%
+  group_by(Project) %>%
+  summarise(
+    Hours = sum(Hours)
+  ) %>%
+  mutate(Percentage = Hours/sum(Hours) * 100 )
+
+ggplot(b, aes(x=Percentage, y=Project, colour=Project, fill=Project)) + 
+  geom_bar(stat="identity", alpha=0.5) +
+  theme_classic() +
+  theme(plot.background = element_rect(fill = "#f6f1f7"),
+        panel.background = element_rect(fill = "#f6f1f7"),
+        legend.background = element_rect(fill="#f6f1f7")) +
+  scale_fill_manual(values=c("#F2C6De", "#dbcdf0", "#c6def1", "#f7d9c4", "#c9e4de", "#faedcb")) +
+  scale_color_manual(values=c("#F2C6De", "#dbcdf0", "#c6def1", "#f7d9c4", "#c9e4de", "#faedcb")) +
+  xlim(0,100) +
+  labs(
+    x="Percentage of Total Work Time",
+    y=""
+  ) +
+  theme(legend.position = "") 
+  
+```
+
+
