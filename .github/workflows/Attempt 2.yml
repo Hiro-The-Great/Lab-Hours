@@ -7,7 +7,7 @@ on:
 
 jobs:
   render:
-  name: Render my document
+  name: Render Lab-Hours
   runs-on: macOS-latest
   steps:
     - uses: actions/checkout@v4
