@@ -4,9 +4,7 @@ on:
       - main
   schedule:
     - cron: '0 0 * * *' # Deploy everyday at midnight
-  pull_request:
-    branches:
-      - main
+
 jobs:
   render:
   name: Render my document
@@ -20,8 +18,8 @@ jobs:
       run: |
         Rscript -e 'install.packages(c("hrbrthemes", "ggthemes", "tidyverse", "lubridate", "ggplot2", "knitr", "kableExtra"))'
     - name: Render flexdashboard
-        run: |
-          Rscript -e 'rmarkdown::render("Lab-Hours.Rmd", output_format = "flex_dashboard", output_dir = "docs")'
+      run: |
+        Rscript -e 'rmarkdown::render("Lab-Hours.Rmd", output_format = "flex_dashboard", output_dir = "docs")'
     - name: Commit results
       run: |
         git add Lab-Hours*
