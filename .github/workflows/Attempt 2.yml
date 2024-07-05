@@ -1,0 +1,27 @@
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *' # Deploy everyday at midnight
+
+jobs:
+  render:
+  name: Render Lab-Hours
+  runs-on: macOS-latest
+  steps:
+    - uses: actions/checkout@v4
+    - uses: r-lib/actions/setup-r@v2
+    - uses: r-lib/actions/setup-pandoc@v1
+    - uses: r-lib/actions/setup-tinytex@v1
+    - name: Install R packages
+      run: |
+        Rscript -e 'install.packages(c("hrbrthemes", "ggthemes", "tidyverse", "lubridate", "ggplot2", "knitr", "kableExtra"))'
+    - name: Render flexdashboard
+      run: |
+        Rscript -e 'rmarkdown::render("Lab-Hours.Rmd", output_format = "flex_dashboard", output_dir = "docs")'
+    - name: Commit results
+      run: |
+        git add Lab-Hours*
+        git commit -m 'Re-build Lab-Hours' || echo "No changes to commit"
+        git push origin || echo "No changes to commit"
