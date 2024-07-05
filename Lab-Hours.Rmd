@@ -140,8 +140,8 @@ task_data <- your_data %>%
 
 ggplot(task_data, aes(x = Project, y = Percentage, fill = Task, label=Task)) +
   geom_bar(stat = "identity") +
-  scale_fill_manual(values=c("#f29982", "#fed87e", "#f6b9b1", "#95cfc0", "#cbb7db", "#74be97","#99a8ca", "#f090ba", "#e1c2dd", "#fcdbab", "#9ed1e8", "#ddcbb4", "#c2dfc9")) +
-  scale_color_manual(values=c("#f29982", "#fed87e", "#f6b9b1", "#95cfc0", "#cbb7db", "#74be97","#99a8ca", "#f090ba", "#e1c2dd", "#fcdbab", "#9ed1e8", "#ddcbb4", "#c2dfc9")) +
+  scale_fill_manual(values=c("#f29982", "#fed87e", "#f6b9b1", "#95cfc0", "#cbb7db", "#74be97","#99a8ca", "#f090ba", "#e1c2dd", "#fcdbab", "#9ed1e8", "#ddcbb4", "#c2dfc9", "#CCDBE9")) +
+  scale_color_manual(values=c("#f29982", "#fed87e", "#f6b9b1", "#95cfc0", "#cbb7db", "#74be97","#99a8ca", "#f090ba", "#e1c2dd", "#fcdbab", "#9ed1e8", "#ddcbb4", "#c2dfc9","#CCDBE9")) +
   labs(title = "Percentage of Time Spent on Tasks by Project",
        x = " ",
        y = "Percentage",
