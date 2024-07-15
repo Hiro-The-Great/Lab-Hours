@@ -95,7 +95,7 @@ c <- c %>%
 
 ggplot(c, aes(month, day, fill= Hours)) + 
   geom_tile() +
-  scale_fill_gradient(low="#ed0867", high = "#fdc1d5", na.value="transparent") +
+  scale_fill_gradient(low="#fdc1d5", high = "#ed0867", na.value="transparent") +
   theme_tufte()+
   guides(x=guide_axis(angle = 45)) +
   theme(plot.background = element_rect(fill = "#f6f1f7"),
