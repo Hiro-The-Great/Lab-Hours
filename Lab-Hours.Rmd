@@ -23,7 +23,6 @@ output:
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(ggplot2)
-library(hrbrthemes)
 library(ggthemes)
 library(tidyverse)
 library(lubridate) 
