@@ -29,7 +29,12 @@ library(lubridate)
 library(knitr)
 library(kableExtra)
 library(rmarkdown)
+library(dplyr)
+library(zoo) 
 ```
+
+Daily
+================================
 
 Column {data-width=150}
 -----------------------------------------------------------------------
@@ -197,5 +202,172 @@ ggplot(b, aes(x=Percentage, y=Project, colour=Project, fill=Project)) +
   theme(legend.position = "") 
   
 ```
+
+Monthly
+================================
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+
+### Hours Worked This Week
+
+```{r}
+your_data <- read.csv("Hours.csv")
+your_data$Date <- as.POSIXct(your_data$Date, format = "%Y-%m-%d")
+
+# Filter out weekends
+a <- your_data %>%
+  filter(!weekdays(Date) %in% c("Saturday", "Sunday"))
+
+# Add month and year columns for grouping
+a <- a %>%
+  mutate(YearMonth = format(Date, "%Y-%m"))
+
+# Calculate total hours worked per month without weekends
+monthly_hours <- a %>%
+  group_by(YearMonth) %>%
+  summarise(Total_Hours = sum(Hours, na.rm = TRUE)) %>%
+  arrange(YearMonth)
+
+# Calculate the number of working days per month for averaging
+working_days_per_month <- a %>%
+  group_by(YearMonth) %>%
+  summarise(Working_Days = n_distinct(Date))
+
+# Join total hours with the number of working days
+monthly_hours <- monthly_hours %>%
+  left_join(working_days_per_month, by = "YearMonth") %>%
+  mutate(Average_Hours = Total_Hours / Working_Days)
+
+# Get current month and year
+current_year_month <- format(Sys.Date(), "%Y-%m")
+
+# Filter data for the current month
+current_month_data <- monthly_hours %>%
+  filter(YearMonth == current_year_month)
+
+# Extract average hours for the current month
+average_hours_current_month <- if(nrow(current_month_data) > 0) {
+  current_month_data$Average_Hours
+} else {
+  NA
+}
+
+valueBox(
+  value = ifelse(!is.na(average_hours_current_month), 
+                 glue::glue("{round(average_hours_current_month, 2)}"), 
+                 "No Data Available"),
+  caption = "Average Hours Worked Per Day (Excluding Weekends) This Month",
+  icon = "fa-clock-o",
+  color = "#F2C6De"
+)
+```
+
+Column {data-width=650 .tabset}
+-----------------------------------------------------------------------
+
+### Average Hours Worked/Day
+```{r}
+
+your_data <- read.csv("Hours.csv")
+your_data$Date <- as.POSIXct(your_data$Date, format = "%Y-%m-%d")
+
+a <- your_data %>%
+  mutate(YearMonth = format(Date, "%Y-%m"))
+
+# Calculate total hours worked per month
+monthly_hours <- a %>%
+  group_by(YearMonth) %>%
+  summarise(Total_Hours = sum(Hours, na.rm = TRUE))
+
+ggplot(monthly_hours, aes(x = YearMonth, y = Total_Hours, group = 1)) +
+  geom_line(color = "#F2C6De", size = 1) +
+  geom_point(color = "#F2C6De", size = 2) + 
+  labs(title = "Total Hours Worked Per Month",
+       x = "Month",
+       y = "Total Hours Worked") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme_classic() +
+  theme(plot.background = element_rect(fill = "#f6f1f7"),
+        panel.background = element_rect(fill = "#f6f1f7"),
+        legend.background = element_rect(fill="#f6f1f7")) 
+```
+
+### Average Hours per Day
+```{r}
+your_data <- read.csv("Hours.csv")
+your_data$Date <- as.POSIXct(your_data$Date, format = "%Y-%m-%d")
+
+# Filter data for the current week
+your_data <- read.csv("Hours.csv")
+your_data$Date <- as.POSIXct(your_data$Date, format = "%Y-%m-%d")
+
+# Filter data for the past 7 days
+start_of_period <- Sys.Date() - days(6)
+end_of_period <- Sys.Date()
+
+recent_data <- your_data %>%
+  filter(Date >= start_of_period & Date <= end_of_period)
+
+# Add day of the week
+recent_data <- recent_data %>%
+  mutate(DayOfWeek = weekdays(Date))
+
+# Aggregate hours by day of the week
+hours_by_day <- recent_data %>%
+  group_by(DayOfWeek) %>%
+  summarise(Total_Hours = sum(Hours, na.rm = TRUE)) %>%
+  arrange(match(DayOfWeek, c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")))
+
+# Compute rolling average
+rolling_avg <- rep(NA, nrow(hours_by_day))  # Initialize rolling average
+for (i in 1:nrow(hours_by_day)) {
+  if (i >= 7) {
+    rolling_avg[i] <- mean(hours_by_day$Total_Hours[(i-6):i], na.rm = TRUE)
+  } else {
+    rolling_avg[i] <- mean(hours_by_day$Total_Hours[1:i], na.rm = TRUE)
+  }
+}
+hours_by_day <- hours_by_day %>%
+  mutate(Rolling_Avg = rolling_avg)
+
+# Prepare data for plotting
+plot_data <- hours_by_day %>%
+  mutate(DayOfWeek = factor(DayOfWeek, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")))
+
+ggplot(plot_data, aes(x = DayOfWeek)) +
+  geom_line(aes(y = Total_Hours, color = "Total Hours Worked"), size = 1, group = 1) +
+  geom_line(aes(y = Rolling_Avg, color = "7-Day Rolling Average"), linetype = "dashed", size = 1, group = 1) +
+  geom_point(aes(y = Total_Hours, color = "Total Hours Worked"), size = 2) +
+  geom_point(aes(y=Rolling_Avg, color = "7-Day Rolling Average"), size = 2) +
+  labs(title = "Hours Worked and 7-Day Rolling Average by Day of Week",
+       x = "Day of Week",
+       y = "Hours Worked",
+       color = "Legend") +
+  scale_color_manual(values = c("Total Hours Worked" = "#55cbcd", "7-Day Rolling Average" = "#f090ba")) +
+  theme_classic() +
+  scale_x_discrete(limits = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")) +
+  theme(plot.background = element_rect(fill = "#f6f1f7"),
+        panel.background = element_rect(fill = "#f6f1f7"),
+        legend.background = element_rect(fill="#f6f1f7")) 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
