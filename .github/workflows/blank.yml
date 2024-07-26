@@ -24,7 +24,7 @@ jobs:
 
       - name: Install R packages
         run: |
-          R -e 'install.packages(c("hrbrthemes", "ggthemes", "tidyverse", "lubridate", "ggplot2", "knitr", "kableExtra", "flexdashboard"))'
+          R -e 'install.packages(c("ggthemes", "tidyverse", "lubridate", "ggplot2", "knitr", "kableExtra", "flexdashboard"))'
 
       - name: Render flexdashboard
         run: |
